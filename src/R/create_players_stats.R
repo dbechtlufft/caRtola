@@ -1,5 +1,4 @@
 # Author - Henrique Gomide Copyright
-# TODO : Add player home_mean and away_mean, games_played, regularity, matches, price
 
 library(tidyverse)
 library(zoo)
@@ -28,7 +27,8 @@ playerInfo <-
   data %>%
   dplyr::select(atletas.slug, atletas.atleta_id, atletas.clube.id.full.name, 
                 atletas.posicao_id, atletas.rodada_id, atletas.pontos_num, 
-                atletas.status_id, atletas.apelido, atletas.preco_num)
+                atletas.status_id, atletas.apelido, atletas.preco_num,
+                atletas.variacao_num)
 
 scouts <- dplyr::select(data, 
                         atletas.rodada_id, atletas.atleta_id, CA, FC, 
@@ -93,7 +93,7 @@ data <-
   arrange(rodadaF) %>%
   mutate(status = lag(atletas.status_id))
 
-data$status <- ifelse(data$rodada == 1 & data$pontuacao != 0,  "Provável", data$status)
+# data$status <- ifelse(data$rodada == 1 & data$pontuacao != 0,  "Provável", data$status)
 
 data <- mutate(data, pontuou = ifelse(CA + FC + FS + 
                                       GC + I + PE + 
@@ -103,8 +103,7 @@ data <- mutate(data, pontuou = ifelse(CA + FC + FS +
                                       CV + DP + PP == 0,
                                       FALSE, TRUE))
 
-# TODO - PREPARE MATCH DATA TO COMBINE AND CREATE AGGREGATED STATISTICS
-
+# Get matches data
 matches <- read.csv("~/caRtola/data/2019/2019_partidas.csv", check.names = FALSE)
 
 convertMatchesToTidy <- function(dataframe) { 
@@ -196,8 +195,8 @@ players.list <-
   dplyr::group_by(atleta.id) %>%
   dplyr::filter(pontuou == TRUE) %>%
   dplyr::summarise(n.jogos = n(),
-                   rodada  = max(rodada)) %>%
-  dplyr::filter(n.jogos >= 1)
+                   rodada  = max(rodada)) # %>%
+#  dplyr::filter(n.jogos >= 1)
 
 n.games.scouts.home.away <- left_join(players.list, scouts.home.away,
                               by = c("atleta.id" = "atleta.id",
@@ -231,7 +230,8 @@ df.cartola.2019 <-
          shotsX_mean, faltas_mean, RB_mean,
          PE_mean, A_mean, I_mean, 
          FS_mean, FF_mean, G_mean,
-         DD_mean, DP_mean)
+         DD_mean, DP_mean,
+         atletas.status_id, atletas.variacao_num, pontuacao)
 
 names(df.cartola.2019) <- c("player_slug", "player_id", "player_nickname",
                             "player_team", "player_position", "price_cartoletas",
@@ -240,9 +240,11 @@ names(df.cartola.2019) <- c("player_slug", "player_id", "player_nickname",
                             "shots_x_mean", "fouls_mean",
                             "RB_mean", "PE_mean", "A_mean",
                             "I_mean", "FS_mean", "FF_mean",
-                            "G_mean", "DD_mean", "DP_mean")
+                            "G_mean", "DD_mean", "DP_mean",
+                            "status", "price_diff", "last_points")
 
 write.csv(df.cartola.2019,
           "~/caRtola/data/2019/2019-medias-jogadores.csv", 
           row.names = FALSE,
           na="0")
+  

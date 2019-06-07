@@ -13,7 +13,6 @@ library(tidyverse)
 
 fetchRoundData <- function(url) {
   # Returns data frame with dates and rounds for Brasileirao 2019
-  
   result <- jsonlite::fromJSON(url)
   result$inicio <- date(ymd_hms(result$inicio))
   result$fim <- date(ymd_hms(result$fim))
@@ -24,14 +23,8 @@ fetchRoundData <- function(url) {
   result <- left_join(temp.df, result, by = "data")
   result <- 
     result %>%
-    mutate(index = lead(rodada_id) - lag(rodada_id))
-  
-  result$filter <- ifelse(!is.na(result$rodada_id) | result$index == 0, TRUE, FALSE)
-  result <- 
-    result %>%
-    filter(filter == TRUE) %>%
-    select(data, rodada_id) %>%
-    fill(data, rodada_id, .direction = "down")
+    fill(rodada_id, .direction = "down") %>%
+    dplyr::select(-marco)
   
   return(result)
   
@@ -40,7 +33,6 @@ fetchRoundData <- function(url) {
 fetchMatchDetail <- function(round) {
   # Returns a data frame with all matches results from the cartola api until a given round.
   # round - Brasileirao round. E.g., If you insert n=3, data will be collected until the round 3.
-  
   round_dates <- fetchRoundData("https://api.cartolafc.globo.com/rodadas")
   
   url_vec <- c()
@@ -75,4 +67,5 @@ fetchMatchDetail <- function(round) {
 }
 
 # Write csv
-write.csv(fetchMatchDetail(round = 4), "data/2019/2019_partidas.csv", row.names = FALSE)
+
+write.csv(fetchMatchDetail(round = 8), "data/2019/2019_partidas.csv", row.names = FALSE)
